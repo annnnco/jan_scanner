@@ -338,7 +338,8 @@ function processCSV(file) {
       const sizesid = cols[2].trim();
       const shoesinfopriceid = cols[3].trim();
       if (!seqno || !edano || !sizesid || !shoesinfopriceid) continue;
-      masterData[`${seqno}-${edano}-${sizesid}`] = shoesinfopriceid;
+      const sizesidPadded = sizesid.padStart(2, '0');
+      masterData[`${seqno}-${edano}-${sizesidPadded}`] = shoesinfopriceid;
       count++;
     }
     document.getElementById('csv-count').textContent = count.toLocaleString();
