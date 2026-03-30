@@ -226,27 +226,18 @@
   <div class="step active" id="step-1">
 
     <div class="card" style="margin-bottom:16px; background: var(--surface2); border-color: var(--accent);">
-      <div class="card-label">使い方</div>
+      <div class="card-label">JANコード登録アプリ</div>
       <div style="font-size:13px; font-weight:700; line-height:1.8; color: var(--text);">
-        <div>① 対応表ファイルを読み込む</div>
-        <div>② スキャン開始ボタンを押す</div>
-        <div style="font-size:12px; color:var(--text2);">登録済みデータは自動で読み込まれます</div>
+        <div>対応表は自動で読み込まれます</div>
+        <div>スキャン開始ボタンを押してください</div>
       </div>
     </div>
 
-    <div class="upload-area" id="upload-area">
-      <div class="icon">📋</div>
-      <strong>① 対応表ファイルを読み込む</strong>
-      <p>タップしてファイルを選択（必須）</p>
-    </div>
-    <input type="file" id="csv-input" accept="*/*">
-    <div class="card success" id="csv-status" style="display:none">
-      <div class="card-label">✅ 対応表 読み込み完了</div>
-      <div class="card-value" id="csv-count">-</div>
-      <div class="card-sub">件のデータを読み込みました</div>
+    <div class="card" id="csv-status" style="background:#f0fff8; border-color: var(--success);">
+      <div style="font-size:13px; font-weight:700; color: var(--text);" id="csv-status-auto">対応表を読み込み中...</div>
     </div>
 
-    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">② スキャン開始</button>
+    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">スキャン開始</button>
   </div>
 
   <div class="step" id="step-2">
@@ -353,13 +344,14 @@ const SUPABASE_URL = 'https://gcvnlgbscrczkodsfwxy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_mJedeQsMGnKICylZKHDpmA_FHd5RByt';
 const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-document.getElementById('upload-area').addEventListener('click', () => document.getElementById('csv-input').click());
-document.getElementById('csv-input').addEventListener('change', e => { if (e.target.files[0]) processCSV(e.target.files[0]); });
+const MASTER_CSV_URL = 'https://gcvnlgbscrczkodsfwxy.supabase.co/storage/v1/object/public/master/shoesinfopriceid_master.csv';
 
-function processCSV(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const text = e.target.result;
+async function loadMasterCSV() {
+  showToast('対応表を読み込み中...', '');
+  try {
+    const res = await fetch(MASTER_CSV_URL);
+    if (!res.ok) throw new Error('fetch failed');
+    const text = await res.text();
     const lines = text.split('\n').filter(l => l.trim());
     let count = 0;
     masterData = {};
@@ -374,13 +366,16 @@ function processCSV(file) {
       masterData[`${seqno}-${edano}-${sizesid.padStart(2,'0')}`] = shoesinfopriceid;
       count++;
     }
-    document.getElementById('csv-count').textContent = count.toLocaleString();
-    document.getElementById('csv-status').style.display = 'block';
+    showToast(`対応表 ${count.toLocaleString()}件 読み込み完了`, 'success');
+    document.getElementById('csv-status-auto').textContent = `✅ 対応表 ${count.toLocaleString()}件 読み込み済み`;
     document.getElementById('start-btn').disabled = count === 0;
-    showToast(`${count.toLocaleString()}件読み込み完了`, 'success');
-  };
-  reader.readAsText(file, 'UTF-8');
+  } catch(e) {
+    showToast('対応表の読み込みに失敗しました', 'error');
+  }
 }
+
+// ページ読み込み時に自動で対応表を取得
+window.addEventListener('DOMContentLoaded', loadMasterCSV);
 
 function startScan() {
   document.getElementById('step-1').classList.remove('active');
