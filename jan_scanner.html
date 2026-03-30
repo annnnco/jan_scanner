@@ -252,6 +252,14 @@
       <div class="phase-dot" id="phase2">2. 箱(JAN)</div>
     </div>
 
+    <div id="scanner-container">
+      <video id="scanner-video"></video>
+      <div class="scan-overlay">
+        <div class="scan-frame"></div>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+
     <!-- カメラ起動中に表示するキャンセルボタン -->
     <div id="btn-cancel-scan" style="display:none">
       <button class="btn btn-secondary" onclick="cancelScan()">スキャンをキャンセル</button>
@@ -260,14 +268,6 @@
     <!-- カメラ起動中に箱スキャン時の値札からやり直すボタン -->
     <div id="btn-back-fudai" style="display:none">
       <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
-    </div>
-
-    <div id="scanner-container">
-      <video id="scanner-video"></video>
-      <div class="scan-overlay">
-        <div class="scan-frame"></div>
-        <div class="scan-line"></div>
-      </div>
     </div>
 
     <div class="card" id="fudai-card" style="display:none">
