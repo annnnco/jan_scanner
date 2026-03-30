@@ -87,6 +87,7 @@
   }
   .card.success { border-color: var(--success); background: #f0fff8; }
   .card.error { border-color: var(--danger); background: #fff5f5; }
+  .card.skip { border-color: #ffb800; background: #fffdf0; }
 
   .card-label { font-size: 11px; color: var(--text2); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
   .card-value { font-size: 20px; font-weight: 800; font-family: 'Courier New', monospace; }
@@ -229,7 +230,7 @@
       <div class="card-sub">件のデータを読み込みました</div>
     </div>
 
-    <div class="upload-area" id="upload-area-registered" style="margin-top:12px">
+    <div class="upload-area" id="upload-area-registered" style="margin-top:4px">
       <div class="icon">✅</div>
       <strong>登録済みJANコード（任意）</strong>
       <p>すでに登録済みの商品をスキップするCSV</p>
@@ -251,6 +252,12 @@
       <div class="phase-dot" id="phase2">2. 箱(JAN)</div>
     </div>
 
+    <!-- カメラ起動中に表示するキャンセルボタン -->
+    <div id="btn-cancel-scan" style="display:none">
+      <button class="btn btn-secondary" onclick="cancelScan()">スキャンをキャンセル</button>
+    </div>
+
+    <!-- カメラ起動中に箱スキャン時の値札からやり直すボタン -->
     <div id="btn-back-fudai" style="display:none">
       <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
     </div>
@@ -278,12 +285,11 @@
       <button class="btn btn-primary" onclick="startScanFudai()">値札をスキャン</button>
     </div>
     <div id="btn-confirm-fudai" style="display:none">
-      <button class="btn btn-success" onclick="confirmFudai()">OK → 箱をスキャンへ</button>
+      <button class="btn btn-success" id="btn-fudai-ok" onclick="confirmFudai()">OK → 箱をスキャンへ</button>
       <button class="btn btn-secondary" onclick="retryScanFudai()">やり直す</button>
     </div>
     <div id="btn-scan-jan" style="display:none">
       <button class="btn btn-primary" onclick="startScanJan()">箱のバーコードをスキャン</button>
-      <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
     </div>
     <div id="btn-confirm-jan" style="display:none">
       <button class="btn btn-success" onclick="confirmJan()">登録する</button>
@@ -330,7 +336,7 @@
 
 <script>
 let masterData = {};
-let registeredIds = new Set(); // 登録済みshoesinfopriceid
+let registeredIds = new Set();
 let records = [];
 let errorCount = 0;
 let codeReader = null;
@@ -340,7 +346,6 @@ let scanTarget = null;
 
 document.getElementById('upload-area').addEventListener('click', () => document.getElementById('csv-input').click());
 document.getElementById('csv-input').addEventListener('change', e => { if (e.target.files[0]) processCSV(e.target.files[0]); });
-
 document.getElementById('upload-area-registered').addEventListener('click', () => document.getElementById('registered-csv-input').click());
 document.getElementById('registered-csv-input').addEventListener('change', e => { if (e.target.files[0]) processRegisteredCSV(e.target.files[0]); });
 
@@ -351,22 +356,15 @@ function processRegisteredCSV(file) {
     const lines = text.split('\n').filter(l => l.trim());
     let count = 0;
     registeredIds = new Set();
-
-    // ヘッダー行を探してSHOESINFOPRICEIDの列インデックスを特定
     const header = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, '').toUpperCase());
     const idIdx = header.indexOf('SHOESINFOPRICEID');
-    if (idIdx === -1) {
-      showToast('SHOESINFOPRICEID列が見つかりません', 'error');
-      return;
-    }
-
+    if (idIdx === -1) { showToast('SHOESINFOPRICEID列が見つかりません', 'error'); return; }
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(',');
       if (cols.length <= idIdx) continue;
       const id = cols[idIdx].trim();
       if (id) { registeredIds.add(id); count++; }
     }
-
     document.getElementById('registered-count').textContent = count.toLocaleString();
     document.getElementById('registered-status').style.display = 'block';
     showToast(`${count.toLocaleString()}件をスキップ設定`, 'success');
@@ -389,8 +387,7 @@ function processCSV(file) {
       const sizesid = cols[2].trim();
       const shoesinfopriceid = cols[3].trim();
       if (!seqno || !edano || !sizesid || !shoesinfopriceid) continue;
-      const sizesidPadded = sizesid.padStart(2, '0');
-      masterData[`${seqno}-${edano}-${sizesidPadded}`] = shoesinfopriceid;
+      masterData[`${seqno}-${edano}-${sizesid.padStart(2,'0')}`] = shoesinfopriceid;
       count++;
     }
     document.getElementById('csv-count').textContent = count.toLocaleString();
@@ -422,7 +419,7 @@ function startScanner(target) {
         else handleJanScan(code);
       }
     }
-  ).catch(() => { showToast('カメラを起動できません', 'error'); stopScanner(); });
+  ).catch(() => { showToast('カメラを起動できません', 'error'); stopScanner(); hideAllButtons(); document.getElementById('btn-scan-fudai').style.display = 'block'; });
 }
 
 function stopScanner() {
@@ -430,15 +427,26 @@ function stopScanner() {
   document.getElementById('scanner-container').classList.remove('active');
 }
 
+// 値札スキャン開始
 function startScanFudai() {
   hideAllButtons();
   document.getElementById('fudai-card').style.display = 'none';
   document.getElementById('jan-card').style.display = 'none';
+  document.getElementById('btn-cancel-scan').style.display = 'block'; // キャンセルボタン表示
   setPhase(1);
   startScanner('fudai');
 }
 
+// 値札スキャン中キャンセル
+function cancelScan() {
+  stopScanner();
+  hideAllButtons();
+  document.getElementById('btn-scan-fudai').style.display = 'block';
+}
+
 function handleFudaiScan(code) {
+  document.getElementById('btn-cancel-scan').style.display = 'none';
+
   if (code.length !== 13) {
     showToast(`${code.length}桁です（13桁必要）`, 'error');
     document.getElementById('btn-scan-fudai').style.display = 'block';
@@ -449,6 +457,7 @@ function handleFudaiScan(code) {
     document.getElementById('btn-scan-fudai').style.display = 'block';
     return;
   }
+
   const seqno = code.substring(1, 7);
   const edano = code.substring(7, 8);
   const sizesid = code.substring(10, 12);
@@ -456,6 +465,7 @@ function handleFudaiScan(code) {
   const shoesinfopriceid = masterData[key];
 
   const card = document.getElementById('fudai-card');
+  card.style.cssText = '';
   card.style.display = 'block';
   document.getElementById('fudai-value').textContent = code;
 
@@ -465,53 +475,41 @@ function handleFudaiScan(code) {
     showToast('対応データが見つかりません', 'error');
     errorCount++;
     document.getElementById('error-count').textContent = errorCount;
-    hideAllButtons();
     document.getElementById('btn-scan-fudai').style.display = 'block';
+    return;
+  }
+
+  currentFudai = { seqno, edano, sizesid, shoesinfopriceid, code };
+
+  if (registeredIds.has(String(shoesinfopriceid))) {
+    card.className = 'card skip';
+    document.getElementById('fudai-sub').textContent = `登録済みのためスキップ可 (ID: ${shoesinfopriceid})`;
+    document.getElementById('btn-fudai-ok').textContent = 'スキップして次へ';
+    document.getElementById('btn-confirm-fudai').style.display = 'block';
+    showToast('登録済みの商品です', '');
     return;
   }
 
   card.className = 'card success';
   document.getElementById('fudai-sub').textContent = `shoesinfopriceid: ${shoesinfopriceid}`;
-  currentFudai = { seqno, edano, sizesid, shoesinfopriceid, code };
-
-  // 登録済みチェック
-  if (registeredIds.has(String(shoesinfopriceid))) {
-    card.className = 'card';
-    card.style.borderColor = '#ffb800';
-    card.style.background = '#fffdf0';
-    document.getElementById('fudai-sub').textContent = `登録済みのためスキップ可 (ID: ${shoesinfopriceid})`;
-    hideAllButtons();
-    // スキップか続けるか選べるボタンを表示
-    document.getElementById('btn-confirm-fudai').style.display = 'block';
-    // OKボタンのテキストを変える
-    document.querySelector('#btn-confirm-fudai .btn-success').textContent = 'スキップして次へ';
-    showToast('登録済みの商品です', '');
-    return;
-  }
-
-  // 通常フロー
-  document.querySelector('#btn-confirm-fudai .btn-success').textContent = 'OK → 箱をスキャンへ';
-  hideAllButtons();
+  document.getElementById('btn-fudai-ok').textContent = 'OK → 箱をスキャンへ';
   document.getElementById('btn-confirm-fudai').style.display = 'block';
   showToast('値札を確認してください', '');
 }
 
 function confirmFudai() {
-  // スキップの場合
   if (registeredIds.has(String(currentFudai.shoesinfopriceid))) {
     currentFudai = null;
     document.getElementById('fudai-card').style.display = 'none';
-    document.getElementById('fudai-card').style.borderColor = '';
-    document.getElementById('fudai-card').style.background = '';
     hideAllButtons();
     document.getElementById('btn-scan-fudai').style.display = 'block';
-    document.querySelector('#btn-confirm-fudai .btn-success').textContent = 'OK → 箱をスキャンへ';
     setPhase(1);
     showToast('スキップしました', '');
     return;
   }
   hideAllButtons();
   document.getElementById('btn-scan-jan').style.display = 'block';
+  document.getElementById('btn-back-fudai').style.display = 'block';
   setPhase(2);
 }
 
@@ -523,14 +521,23 @@ function retryScanFudai() {
   setPhase(1);
 }
 
+// 箱スキャン開始
+function startScanJan() {
+  document.getElementById('btn-scan-jan').style.display = 'none';
+  document.getElementById('btn-confirm-jan').style.display = 'none';
+  document.getElementById('jan-card').style.display = 'none';
+  // btn-back-fudaiは表示したまま
+  startScanner('jan');
+}
+
 function handleJanScan(code) {
   const prefix2 = code.substring(0, 2);
   if (prefix2 !== '45' && prefix2 !== '49') {
     showToast('JANコードは45か49から始まる必要があります', 'error');
-    document.getElementById('btn-back-fudai').style.display = 'block';
-    startScanner('jan'); // 再スキャン
+    document.getElementById('btn-scan-jan').style.display = 'block';
     return;
   }
+
   pendingJan = code;
   const card = document.getElementById('jan-card');
   card.style.display = 'block';
@@ -540,12 +547,13 @@ function handleJanScan(code) {
     card.className = 'card error';
     document.getElementById('jan-value').textContent = code;
     showToast('既に登録済みです', 'error');
-    document.getElementById('btn-back-fudai').style.display = 'block';
+    document.getElementById('btn-scan-jan').style.display = 'block';
     return;
   }
 
   card.className = 'card success';
   document.getElementById('jan-value').textContent = code;
+  document.getElementById('btn-scan-jan').style.display = 'none';
   document.getElementById('btn-confirm-jan').style.display = 'block';
   showToast('JANコードを確認してください', '');
 }
@@ -568,11 +576,12 @@ function confirmJan() {
 function retryScanJan() {
   pendingJan = null;
   document.getElementById('jan-card').style.display = 'none';
-  hideAllButtons();
+  document.getElementById('btn-confirm-jan').style.display = 'none';
   document.getElementById('btn-scan-jan').style.display = 'block';
 }
 
 function backToFudai() {
+  stopScanner();
   currentFudai = null; pendingJan = null;
   document.getElementById('fudai-card').style.display = 'none';
   document.getElementById('jan-card').style.display = 'none';
@@ -582,17 +591,9 @@ function backToFudai() {
 }
 
 function hideAllButtons() {
-  ['btn-scan-fudai','btn-confirm-fudai','btn-scan-jan','btn-confirm-jan','btn-back-fudai'].forEach(id => {
+  ['btn-scan-fudai','btn-confirm-fudai','btn-scan-jan','btn-confirm-jan','btn-back-fudai','btn-cancel-scan'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
-}
-
-function startScanJan() {
-  document.getElementById('btn-scan-jan').style.display = 'none';
-  document.getElementById('btn-confirm-jan').style.display = 'none';
-  document.getElementById('btn-back-fudai').style.display = 'block';
-  document.getElementById('jan-card').style.display = 'none';
-  startScanner('jan');
 }
 
 function setPhase(n) {
@@ -672,6 +673,7 @@ function resetAll() {
   records = []; errorCount = 0; currentFudai = null; pendingJan = null; masterData = {};
   updateCount(); updateHistory();
   document.getElementById('csv-status').style.display = 'none';
+  document.getElementById('registered-status').style.display = 'none';
   document.getElementById('start-btn').disabled = true;
   document.getElementById('finish-actions').style.display = 'none';
   document.getElementById('step-2').classList.remove('active');
@@ -679,6 +681,7 @@ function resetAll() {
 }
 
 function finishWork() {
+  stopScanner();
   document.getElementById('finish-actions').style.display = 'block';
   showToast('お疲れさまでした！', 'success');
 }
