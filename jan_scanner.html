@@ -523,13 +523,6 @@ function retryScanFudai() {
   setPhase(1);
 }
 
-function startScanJan() {
-  document.getElementById('jan-card').style.display = 'none';
-  document.getElementById('btn-scan-jan').style.display = 'none';
-  document.getElementById('btn-back-fudai').style.display = 'block';
-  startScanner('jan');
-}
-
 function handleJanScan(code) {
   const prefix2 = code.substring(0, 2);
   if (prefix2 !== '45' && prefix2 !== '49') {
@@ -593,6 +586,14 @@ function hideAllButtons() {
   ['btn-scan-fudai','btn-confirm-fudai','btn-scan-jan','btn-confirm-jan','btn-back-fudai'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
+}
+
+function startScanJan() {
+  document.getElementById('btn-scan-jan').style.display = 'none';
+  document.getElementById('btn-confirm-jan').style.display = 'none';
+  document.getElementById('btn-back-fudai').style.display = 'block';
+  document.getElementById('jan-card').style.display = 'none';
+  startScanner('jan');
 }
 
 function setPhase(n) {
