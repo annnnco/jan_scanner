@@ -228,6 +228,19 @@
       <div class="card-value" id="csv-count">-</div>
       <div class="card-sub">件のデータを読み込みました</div>
     </div>
+
+    <div class="upload-area" id="upload-area-registered" style="margin-top:12px">
+      <div class="icon">✅</div>
+      <strong>登録済みJANコード（任意）</strong>
+      <p>すでに登録済みの商品をスキップするCSV</p>
+    </div>
+    <input type="file" id="registered-csv-input" accept="*/*">
+    <div class="card success" id="registered-status" style="display:none">
+      <div class="card-label">登録済みCSV読み込み完了</div>
+      <div class="card-value" id="registered-count">-</div>
+      <div class="card-sub">件をスキップ対象に設定しました</div>
+    </div>
+
     <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">スキャン開始</button>
   </div>
 
@@ -313,6 +326,7 @@
 
 <script>
 let masterData = {};
+let registeredIds = new Set(); // 登録済みshoesinfopriceid
 let records = [];
 let errorCount = 0;
 let codeReader = null;
@@ -322,6 +336,39 @@ let scanTarget = null;
 
 document.getElementById('upload-area').addEventListener('click', () => document.getElementById('csv-input').click());
 document.getElementById('csv-input').addEventListener('change', e => { if (e.target.files[0]) processCSV(e.target.files[0]); });
+
+document.getElementById('upload-area-registered').addEventListener('click', () => document.getElementById('registered-csv-input').click());
+document.getElementById('registered-csv-input').addEventListener('change', e => { if (e.target.files[0]) processRegisteredCSV(e.target.files[0]); });
+
+function processRegisteredCSV(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const lines = text.split('\n').filter(l => l.trim());
+    let count = 0;
+    registeredIds = new Set();
+
+    // ヘッダー行を探してSHOESINFOPRICEIDの列インデックスを特定
+    const header = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, '').toUpperCase());
+    const idIdx = header.indexOf('SHOESINFOPRICEID');
+    if (idIdx === -1) {
+      showToast('SHOESINFOPRICEID列が見つかりません', 'error');
+      return;
+    }
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',');
+      if (cols.length <= idIdx) continue;
+      const id = cols[idIdx].trim();
+      if (id) { registeredIds.add(id); count++; }
+    }
+
+    document.getElementById('registered-count').textContent = count.toLocaleString();
+    document.getElementById('registered-status').style.display = 'block';
+    showToast(`${count.toLocaleString()}件をスキップ設定`, 'success');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
 
 function processCSV(file) {
   const reader = new FileReader();
@@ -422,12 +469,43 @@ function handleFudaiScan(code) {
   card.className = 'card success';
   document.getElementById('fudai-sub').textContent = `shoesinfopriceid: ${shoesinfopriceid}`;
   currentFudai = { seqno, edano, sizesid, shoesinfopriceid, code };
+
+  // 登録済みチェック
+  if (registeredIds.has(String(shoesinfopriceid))) {
+    card.className = 'card';
+    card.style.borderColor = '#ffb800';
+    card.style.background = '#fffdf0';
+    document.getElementById('fudai-sub').textContent = `登録済みのためスキップ可 (ID: ${shoesinfopriceid})`;
+    hideAllButtons();
+    // スキップか続けるか選べるボタンを表示
+    document.getElementById('btn-confirm-fudai').style.display = 'block';
+    // OKボタンのテキストを変える
+    document.querySelector('#btn-confirm-fudai .btn-success').textContent = 'スキップして次へ';
+    showToast('登録済みの商品です', '');
+    return;
+  }
+
+  // 通常フロー
+  document.querySelector('#btn-confirm-fudai .btn-success').textContent = 'OK → 箱をスキャンへ';
   hideAllButtons();
   document.getElementById('btn-confirm-fudai').style.display = 'block';
   showToast('値札を確認してください', '');
 }
 
 function confirmFudai() {
+  // スキップの場合
+  if (registeredIds.has(String(currentFudai.shoesinfopriceid))) {
+    currentFudai = null;
+    document.getElementById('fudai-card').style.display = 'none';
+    document.getElementById('fudai-card').style.borderColor = '';
+    document.getElementById('fudai-card').style.background = '';
+    hideAllButtons();
+    document.getElementById('btn-scan-fudai').style.display = 'block';
+    document.querySelector('#btn-confirm-fudai .btn-success').textContent = 'OK → 箱をスキャンへ';
+    setPhase(1);
+    showToast('スキップしました', '');
+    return;
+  }
   hideAllButtons();
   document.getElementById('btn-scan-jan').style.display = 'block';
   setPhase(2);
