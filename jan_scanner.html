@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="JAN登録">
 <meta name="theme-color" content="#00b4d8">
 <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
 
@@ -359,6 +360,11 @@ let currentFudai = null;
 let pendingJan = null;
 let scanTarget = null;
 
+// Supabase設定（ここを書き換えてください）
+const SUPABASE_URL = 'https://gcvnlgbscrczkodsfwxy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_mJedeQsMGnKICylZKHDpmA_FHd5RByt';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 document.getElementById('upload-area').addEventListener('click', () => document.getElementById('csv-input').click());
 document.getElementById('csv-input').addEventListener('change', e => { if (e.target.files[0]) processCSV(e.target.files[0]); });
 document.getElementById('upload-area-registered').addEventListener('click', () => document.getElementById('registered-csv-input').click());
@@ -573,8 +579,22 @@ function handleJanScan(code) {
   showToast('JANコードを確認してください', '');
 }
 
-function confirmJan() {
+async function confirmJan() {
   if (!currentFudai || !pendingJan) return;
+
+  const record = {
+    shoesinfopriceid: parseInt(currentFudai.shoesinfopriceid),
+    sizesid: currentFudai.sizesid,
+    jancode: pendingJan
+  };
+
+  // Supabaseに保存
+  const { error } = await supabase.from('jancode').insert(record);
+  if (error) {
+    showToast('保存エラー: ' + error.message, 'error');
+    return;
+  }
+
   records.push({ shoesinfopriceid: currentFudai.shoesinfopriceid, sizesid: currentFudai.sizesid, jancode: pendingJan });
   updateCount();
   updateHistory();
