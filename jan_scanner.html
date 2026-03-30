@@ -251,6 +251,10 @@
       <div class="phase-dot" id="phase2">2. 箱(JAN)</div>
     </div>
 
+    <div id="btn-back-fudai" style="display:none">
+      <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
+    </div>
+
     <div id="scanner-container">
       <video id="scanner-video"></video>
       <div class="scan-overlay">
@@ -279,9 +283,6 @@
     </div>
     <div id="btn-scan-jan" style="display:none">
       <button class="btn btn-primary" onclick="startScanJan()">箱のバーコードをスキャン</button>
-      <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
-    </div>
-    <div id="btn-back-fudai" style="display:none">
       <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
     </div>
     <div id="btn-confirm-jan" style="display:none">
