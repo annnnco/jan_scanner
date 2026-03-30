@@ -201,8 +201,8 @@
   .modal input:focus { border-color: var(--accent); }
 
   #toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(16px);
+    position: fixed; top: 80px; left: 50%;
+    transform: translateX(-50%) translateY(-16px);
     background: #fff; border: 2px solid var(--border); color: var(--text);
     padding: 10px 20px; border-radius: 50px; font-size: 13px; font-weight: 800;
     opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap;
@@ -223,31 +223,41 @@
 <div class="container">
 
   <div class="step active" id="step-1">
+
+    <div class="card" style="margin-bottom:16px; background: var(--surface2); border-color: var(--accent);">
+      <div class="card-label">使い方</div>
+      <div style="font-size:13px; font-weight:700; line-height:1.8; color: var(--text);">
+        <div>① 対応表ファイルを読み込む（必須）</div>
+        <div>② 登録済みCSVを読み込む（任意）</div>
+        <div>③ スキャン開始ボタンを押す</div>
+      </div>
+    </div>
+
     <div class="upload-area" id="upload-area">
       <div class="icon">📋</div>
-      <strong>対応表ファイルを読み込む</strong>
-      <p>タップしてファイルを選択</p>
+      <strong>① 対応表ファイルを読み込む</strong>
+      <p>タップしてファイルを選択（必須）</p>
     </div>
     <input type="file" id="csv-input" accept="*/*">
     <div class="card success" id="csv-status" style="display:none">
-      <div class="card-label">読み込み完了</div>
+      <div class="card-label">✅ 対応表 読み込み完了</div>
       <div class="card-value" id="csv-count">-</div>
       <div class="card-sub">件のデータを読み込みました</div>
     </div>
 
     <div class="upload-area" id="upload-area-registered" style="margin-top:4px">
       <div class="icon">✅</div>
-      <strong>登録済みJANコード（任意）</strong>
+      <strong>② 登録済みJANコード（任意）</strong>
       <p>すでに登録済みの商品をスキップするCSV</p>
     </div>
     <input type="file" id="registered-csv-input" accept="*/*">
     <div class="card success" id="registered-status" style="display:none">
-      <div class="card-label">登録済みCSV読み込み完了</div>
+      <div class="card-label">✅ 登録済みCSV 読み込み完了</div>
       <div class="card-value" id="registered-count">-</div>
       <div class="card-sub">件をスキップ対象に設定しました</div>
     </div>
 
-    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">スキャン開始</button>
+    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">③ スキャン開始</button>
   </div>
 
   <div class="step" id="step-2">
