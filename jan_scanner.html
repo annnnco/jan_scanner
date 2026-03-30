@@ -363,7 +363,7 @@ let scanTarget = null;
 // Supabase設定（ここを書き換えてください）
 const SUPABASE_URL = 'https://gcvnlgbscrczkodsfwxy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_mJedeQsMGnKICylZKHDpmA_FHd5RByt';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.getElementById('upload-area').addEventListener('click', () => document.getElementById('csv-input').click());
 document.getElementById('csv-input').addEventListener('change', e => { if (e.target.files[0]) processCSV(e.target.files[0]); });
@@ -422,6 +422,28 @@ function processCSV(file) {
 function startScan() {
   document.getElementById('step-1').classList.remove('active');
   document.getElementById('step-2').classList.add('active');
+
+  // Supabaseから既存データを読み込む
+  loadFromSupabase();
+}
+
+async function loadFromSupabase() {
+  showToast('既存データを読み込み中...', '');
+  const { data, error } = await dbClient.from('jancode').select('*').order('id', { ascending: false });
+  if (error) {
+    showToast('データ読み込みエラー', 'error');
+    return;
+  }
+  if (data && data.length > 0) {
+    records = data.map(r => ({
+      shoesinfopriceid: String(r.shoesinfopriceid),
+      sizesid: r.sizesid,
+      jancode: r.jancode
+    }));
+    updateCount();
+    updateHistory();
+    showToast(`${records.length}件の既存データを読み込みました`, 'success');
+  }
 }
 
 function startScanner(target) {
@@ -589,7 +611,7 @@ async function confirmJan() {
   };
 
   // Supabaseに保存
-  const { error } = await supabase.from('jancode').insert(record);
+  const { error } = await dbClient.from('jancode').insert(record);
   if (error) {
     showToast('保存エラー: ' + error.message, 'error');
     return;
