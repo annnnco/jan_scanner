@@ -281,6 +281,9 @@
       <button class="btn btn-primary" onclick="startScanJan()">箱のバーコードをスキャン</button>
       <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
     </div>
+    <div id="btn-back-fudai" style="display:none">
+      <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
+    </div>
     <div id="btn-confirm-jan" style="display:none">
       <button class="btn btn-success" onclick="confirmJan()">登録する</button>
       <button class="btn btn-secondary" onclick="retryScanJan()">やり直す</button>
@@ -520,8 +523,10 @@ function retryScanFudai() {
 }
 
 function startScanJan() {
-  hideAllButtons();
   document.getElementById('jan-card').style.display = 'none';
+  // ボタンは隠さずカメラだけ起動
+  document.getElementById('btn-scan-jan').style.display = 'none';
+  document.getElementById('btn-back-fudai').style.display = 'block';
   startScanner('jan');
 }
 
@@ -585,7 +590,7 @@ function backToFudai() {
 }
 
 function hideAllButtons() {
-  ['btn-scan-fudai','btn-confirm-fudai','btn-scan-jan','btn-confirm-jan'].forEach(id => {
+  ['btn-scan-fudai','btn-confirm-fudai','btn-scan-jan','btn-confirm-jan','btn-back-fudai'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
 }
