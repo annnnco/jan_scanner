@@ -655,7 +655,8 @@ function downloadCSV() {
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/tab-separated-values' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `jancode_${new Date().toISOString().slice(0,10)}.tsv`;
+  const firstId = records[0].shoesinfopriceid;
+  a.download = `jancode_${new Date().toISOString().slice(0,10)}_${firstId}.tsv`;
   a.click();
   showToast('ダウンロード完了', 'success');
 }
