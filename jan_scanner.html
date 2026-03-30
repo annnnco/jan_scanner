@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>JANコード登録</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="JAN登録">
+<meta name="theme-color" content="#00b4d8">
 <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
@@ -684,6 +689,20 @@ function finishWork() {
   stopScanner();
   document.getElementById('finish-actions').style.display = 'block';
   showToast('お疲れさまでした！', 'success');
+}
+
+// Service Worker登録（PWA・キャッシュ自動更新）
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          window.location.reload();
+        }
+      });
+    });
+  });
 }
 
 function showToast(msg, type = '') {
