@@ -527,7 +527,8 @@ function handleJanScan(code) {
   const prefix2 = code.substring(0, 2);
   if (prefix2 !== '45' && prefix2 !== '49') {
     showToast('JANコードは45か49から始まる必要があります', 'error');
-    document.getElementById('btn-scan-jan').style.display = 'block';
+    document.getElementById('btn-back-fudai').style.display = 'block';
+    startScanner('jan'); // 再スキャン
     return;
   }
   pendingJan = code;
@@ -539,8 +540,7 @@ function handleJanScan(code) {
     card.className = 'card error';
     document.getElementById('jan-value').textContent = code;
     showToast('既に登録済みです', 'error');
-    hideAllButtons();
-    document.getElementById('btn-scan-jan').style.display = 'block';
+    document.getElementById('btn-back-fudai').style.display = 'block';
     return;
   }
 
