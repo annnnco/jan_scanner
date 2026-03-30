@@ -228,9 +228,9 @@
     <div class="card" style="margin-bottom:16px; background: var(--surface2); border-color: var(--accent);">
       <div class="card-label">使い方</div>
       <div style="font-size:13px; font-weight:700; line-height:1.8; color: var(--text);">
-        <div>① 対応表ファイルを読み込む（必須）</div>
-        <div>② 登録済みCSVを読み込む（任意）</div>
-        <div>③ スキャン開始ボタンを押す</div>
+        <div>① 対応表ファイルを読み込む</div>
+        <div>② スキャン開始ボタンを押す</div>
+        <div style="font-size:12px; color:var(--text2);">登録済みデータは自動で読み込まれます</div>
       </div>
     </div>
 
@@ -246,19 +246,7 @@
       <div class="card-sub">件のデータを読み込みました</div>
     </div>
 
-    <div class="upload-area" id="upload-area-registered" style="margin-top:4px">
-      <div class="icon">✅</div>
-      <strong>② 登録済みJANコード（任意）</strong>
-      <p>すでに登録済みの商品をスキップするCSV</p>
-    </div>
-    <input type="file" id="registered-csv-input" accept="*/*">
-    <div class="card success" id="registered-status" style="display:none">
-      <div class="card-label">✅ 登録済みCSV 読み込み完了</div>
-      <div class="card-value" id="registered-count">-</div>
-      <div class="card-sub">件をスキップ対象に設定しました</div>
-    </div>
-
-    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">③ スキャン開始</button>
+    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">② スキャン開始</button>
   </div>
 
   <div class="step" id="step-2">
@@ -367,31 +355,6 @@ const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 document.getElementById('upload-area').addEventListener('click', () => document.getElementById('csv-input').click());
 document.getElementById('csv-input').addEventListener('change', e => { if (e.target.files[0]) processCSV(e.target.files[0]); });
-document.getElementById('upload-area-registered').addEventListener('click', () => document.getElementById('registered-csv-input').click());
-document.getElementById('registered-csv-input').addEventListener('change', e => { if (e.target.files[0]) processRegisteredCSV(e.target.files[0]); });
-
-function processRegisteredCSV(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const text = e.target.result;
-    const lines = text.split('\n').filter(l => l.trim());
-    let count = 0;
-    registeredIds = new Set();
-    const header = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, '').toUpperCase());
-    const idIdx = header.indexOf('SHOESINFOPRICEID');
-    if (idIdx === -1) { showToast('SHOESINFOPRICEID列が見つかりません', 'error'); return; }
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(',');
-      if (cols.length <= idIdx) continue;
-      const id = cols[idIdx].trim();
-      if (id) { registeredIds.add(id); count++; }
-    }
-    document.getElementById('registered-count').textContent = count.toLocaleString();
-    document.getElementById('registered-status').style.display = 'block';
-    showToast(`${count.toLocaleString()}件をスキップ設定`, 'success');
-  };
-  reader.readAsText(file, 'UTF-8');
-}
 
 function processCSV(file) {
   const reader = new FileReader();
@@ -440,9 +403,13 @@ async function loadFromSupabase() {
       sizesid: r.sizesid,
       jancode: r.jancode
     }));
+    // 登録済みIDをセットに入れてスキップ判定に使う
+    registeredIds = new Set(records.map(r => r.shoesinfopriceid));
     updateCount();
     updateHistory();
     showToast(`${records.length}件の既存データを読み込みました`, 'success');
+  } else {
+    showToast('既存データなし。スキャン開始してください', '');
   }
 }
 
