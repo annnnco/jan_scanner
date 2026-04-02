@@ -402,7 +402,6 @@ async function loadFromSupabase() {
       sizesid: r.sizesid,
       jancode: r.jancode
     }));
-    // 登録済みIDをセットに入れてスキップ判定に使う
     registeredIds = new Set(records.map(r => r.shoesinfopriceid));
     updateCount();
     updateHistory();
@@ -410,6 +409,26 @@ async function loadFromSupabase() {
   } else {
     showToast('既存データなし。スキャン開始してください', '');
   }
+
+  // リアルタイム購読
+  dbClient.channel('jancode-realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jancode' }, payload => {
+      const r = payload.new;
+      const newRecord = {
+        shoesinfopriceid: String(r.shoesinfopriceid),
+        sizesid: r.sizesid,
+        jancode: r.jancode
+      };
+      // 重複がなければ追加
+      if (!registeredIds.has(newRecord.shoesinfopriceid)) {
+        records.unshift(newRecord);
+        registeredIds.add(newRecord.shoesinfopriceid);
+        updateCount();
+        updateHistory();
+        showToast('他の端末で登録されました', '');
+      }
+    })
+    .subscribe();
 }
 
 function startScanner(target) {
