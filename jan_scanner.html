@@ -237,7 +237,8 @@
       <div style="font-size:13px; font-weight:700; color: var(--text);" id="csv-status-auto">対応表を読み込み中...</div>
     </div>
 
-    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">スキャン開始</button>
+    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">スキャン開始（通常モード）</button>
+    <button class="btn btn-secondary" id="start-raw-btn" onclick="startRawScan()" style="margin-top:8px">値札+JANだけ読み込む（rawモード）</button>
   </div>
 
   <div class="step" id="step-2">
@@ -338,6 +339,7 @@ let codeReader = null;
 let currentFudai = null;
 let pendingJan = null;
 let scanTarget = null;
+let rawMode = false; // rawモードフラグ
 
 // Supabase設定（ここを書き換えてください）
 const SUPABASE_URL = 'https://gcvnlgbscrczkodsfwxy.supabase.co';
@@ -382,11 +384,17 @@ async function loadMasterCSV() {
 window.addEventListener('DOMContentLoaded', loadMasterCSV);
 
 function startScan() {
+  rawMode = false;
   document.getElementById('step-1').classList.remove('active');
   document.getElementById('step-2').classList.add('active');
-
-  // Supabaseから既存データを読み込む
   loadFromSupabase();
+}
+
+function startRawScan() {
+  rawMode = true;
+  document.getElementById('step-1').classList.remove('active');
+  document.getElementById('step-2').classList.add('active');
+  showToast('rawモード：値札+JANのみ登録', '');
 }
 
 async function loadFromSupabase() {
@@ -497,6 +505,19 @@ function handleFudaiScan(code) {
   card.style.display = 'block';
   document.getElementById('fudai-value').textContent = code;
 
+  // rawモード: 対応データがなくてもそのまま進む
+  if (rawMode) {
+    card.className = 'card success';
+    document.getElementById('fudai-sub').textContent = shoesinfopriceid
+      ? `shoesinfopriceid: ${shoesinfopriceid}`
+      : `seqno:${seqno} edano:${edano} size:${sizesid}（未対応）`;
+    currentFudai = { seqno, edano, sizesid, shoesinfopriceid: shoesinfopriceid || '', code };
+    document.getElementById('btn-fudai-ok').textContent = 'OK → 箱をスキャンへ';
+    document.getElementById('btn-confirm-fudai').style.display = 'block';
+    showToast('値札を確認してください', '');
+    return;
+  }
+
   if (!shoesinfopriceid) {
     card.className = 'card error';
     document.getElementById('fudai-sub').textContent = `対応データなし (${key})`;
@@ -560,7 +581,8 @@ function startScanJan() {
 
 function handleJanScan(code) {
   const prefix2 = code.substring(0, 2);
-  if (prefix2 !== '45' && prefix2 !== '49') {
+  // rawモード以外は45か49から始まるJANのみ
+  if (!rawMode && prefix2 !== '45' && prefix2 !== '49') {
     showToast('JANコードは45か49から始まる必要があります', 'error');
     document.getElementById('btn-scan-jan').style.display = 'block';
     return;
@@ -571,7 +593,7 @@ function handleJanScan(code) {
   card.style.display = 'block';
 
   const dup = records.find(r => r.shoesinfopriceid === currentFudai.shoesinfopriceid);
-  if (dup) {
+  if (!rawMode && dup) {
     card.className = 'card error';
     document.getElementById('jan-value').textContent = code;
     showToast('既に登録済みです', 'error');
@@ -588,6 +610,32 @@ function handleJanScan(code) {
 
 async function confirmJan() {
   if (!currentFudai || !pendingJan) return;
+
+  if (rawMode) {
+    // rawモード: jancode_rawテーブルに保存
+    const rawRecord = {
+      seqno: currentFudai.seqno,
+      edano: currentFudai.edano,
+      sizesid: currentFudai.sizesid,
+      jancode: pendingJan
+    };
+    const { error } = await dbClient.from('jancode_raw').insert(rawRecord);
+    if (error) {
+      showToast('保存エラー: ' + error.message, 'error');
+      return;
+    }
+    records.push({ shoesinfopriceid: `${currentFudai.seqno}-${currentFudai.edano}-${currentFudai.sizesid}`, sizesid: currentFudai.sizesid, jancode: pendingJan });
+    updateCount();
+    updateHistory();
+    showToast('rawモードで登録完了！', 'success');
+    currentFudai = null; pendingJan = null;
+    document.getElementById('fudai-card').style.display = 'none';
+    document.getElementById('jan-card').style.display = 'none';
+    hideAllButtons();
+    document.getElementById('btn-scan-fudai').style.display = 'block';
+    setPhase(1);
+    return;
+  }
 
   const record = {
     shoesinfopriceid: parseInt(currentFudai.shoesinfopriceid),
