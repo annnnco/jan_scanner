@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>JANコード登録</title>
+<title>GTINコード登録</title>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="JAN登録">
+<meta name="apple-mobile-web-app-title" content="GTIN登録">
 <meta name="theme-color" content="#00b4d8">
 <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -19,7 +19,6 @@
     --surface: #ffffff;
     --surface2: #e8f7ff;
     --accent: #00b4d8;
-    --accent2: #0096c7;
     --yellow: #ffe566;
     --text: #1a3a4a;
     --text2: #6a9ab0;
@@ -34,7 +33,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Nunito', 'Helvetica Neue', sans-serif;
+    font-family: 'Nunito', sans-serif;
     min-height: 100vh;
     padding-bottom: 60px;
   }
@@ -67,22 +66,6 @@
   .step { display: none; }
   .step.active { display: block; }
 
-  .upload-area {
-    border: 2.5px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 36px 20px;
-    text-align: center;
-    cursor: pointer;
-    background: var(--surface);
-    margin-bottom: 14px;
-    transition: all 0.2s;
-  }
-  .upload-area:hover { border-color: var(--accent); background: var(--surface2); }
-  .upload-area .icon { font-size: 40px; margin-bottom: 10px; }
-  .upload-area strong { font-size: 16px; font-weight: 900; display: block; margin-bottom: 4px; }
-  .upload-area p { color: var(--text2); font-size: 13px; font-weight: 600; }
-  input[type="file"] { display: none; }
-
   .card {
     background: var(--surface);
     border: 2px solid var(--border);
@@ -94,23 +77,16 @@
   .card.success { border-color: var(--success); background: #f0fff8; }
   .card.error { border-color: var(--danger); background: #fff5f5; }
   .card.skip { border-color: #ffb800; background: #fffdf0; }
+  .card.info { background: var(--surface2); border-color: var(--accent); }
 
   .card-label { font-size: 11px; color: var(--text2); font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
   .card-value { font-size: 20px; font-weight: 800; font-family: 'Courier New', monospace; }
   .card-sub { font-size: 12px; color: var(--text2); font-weight: 600; margin-top: 3px; }
 
   .btn {
-    display: block;
-    width: 100%;
-    padding: 15px;
-    border-radius: 50px;
-    border: none;
-    font-size: 15px;
-    font-weight: 900;
-    cursor: pointer;
-    font-family: 'Nunito', sans-serif;
-    transition: all 0.15s;
-    margin-bottom: 8px;
+    display: block; width: 100%; padding: 15px;
+    border-radius: 50px; border: none; font-size: 15px; font-weight: 900;
+    cursor: pointer; font-family: 'Nunito', sans-serif; transition: all 0.15s; margin-bottom: 8px;
   }
   .btn:last-child { margin-bottom: 0; }
   .btn-primary { background: linear-gradient(135deg, #00b4d8, #0096c7); color: #fff; box-shadow: 0 4px 14px rgba(0,180,216,0.35); }
@@ -121,23 +97,14 @@
   .btn-sm { padding: 7px 12px; font-size: 12px; width: auto; display: inline-block; margin-bottom: 0; border-radius: 20px; }
 
   #scanner-container {
-    position: relative;
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: #000;
-    margin-bottom: 12px;
-    aspect-ratio: 4/3;
-    box-shadow: 0 8px 32px rgba(0,180,216,0.2);
-    display: none;
+    position: relative; border-radius: var(--radius); overflow: hidden;
+    background: #000; margin-bottom: 12px; aspect-ratio: 4/3;
+    box-shadow: 0 8px 32px rgba(0,180,216,0.2); display: none;
   }
   #scanner-container.active { display: block; }
   #scanner-video { width: 100%; height: 100%; object-fit: cover; }
 
-  .scan-overlay {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    pointer-events: none;
-  }
+  .scan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
   .scan-frame { position: absolute; inset: 20%; border: 2.5px solid rgba(0,180,216,0.8); border-radius: 12px; }
   .scan-line {
     width: 70%; height: 2.5px;
@@ -160,10 +127,7 @@
   .phase-dot.active { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
   .phase-dot.done { border-color: var(--success); color: var(--success); background: #f0fff8; }
 
-  .history-header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 10px; margin-top: 16px;
-  }
+  .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; margin-top: 16px; }
   .history-header h3 { font-size: 15px; font-weight: 900; }
 
   .record-item {
@@ -172,10 +136,9 @@
     display: flex; align-items: center; gap: 10px;
   }
   .record-info { flex: 1; }
-  .record-id { font-size: 13px; font-weight: 800; font-family: 'Courier New', monospace; }
-  .record-jan { font-size: 12px; color: var(--text2); font-family: 'Courier New', monospace; margin-top: 2px; }
+  .record-gtin { font-size: 13px; font-weight: 800; font-family: 'Courier New', monospace; }
+  .record-seq { font-size: 12px; color: var(--text2); font-family: 'Courier New', monospace; margin-top: 2px; }
   .record-size { background: var(--yellow); color: #1a3a4a; font-size: 11px; font-weight: 900; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
-  .record-actions { display: flex; gap: 6px; }
 
   .empty-state { text-align: center; color: var(--text2); padding: 24px; font-size: 13px; font-weight: 700; }
 
@@ -185,21 +148,6 @@
     font-weight: 700; display: flex; justify-content: space-between;
   }
   .status-bar span { color: var(--accent); font-weight: 900; }
-
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-    z-index: 200; align-items: center; justify-content: center; padding: 20px;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal { background: var(--surface); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
-  .modal h3 { font-size: 16px; font-weight: 900; margin-bottom: 14px; }
-  .modal-label { font-size: 12px; color: var(--text2); font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
-  .modal input {
-    width: 100%; background: var(--bg); border: 2px solid var(--border);
-    border-radius: 10px; padding: 10px 12px; font-size: 15px;
-    font-family: 'Courier New', monospace; color: var(--text); outline: none; margin-bottom: 10px;
-  }
-  .modal input:focus { border-color: var(--accent); }
 
   #toast {
     position: fixed; top: 80px; left: 50%;
@@ -217,35 +165,47 @@
 <body>
 
 <header>
-  <h1>JANコード登録</h1>
+  <h1>GTINコード登録</h1>
   <span id="count-badge">0件</span>
 </header>
 
 <div class="container">
 
+  <!-- STEP 1: 開始画面 -->
   <div class="step active" id="step-1">
-
-    <div class="card" style="margin-bottom:16px; background: var(--surface2); border-color: var(--accent);">
-      <div class="card-label">JANコード登録アプリ</div>
-      <div style="font-size:13px; font-weight:700; line-height:1.8; color: var(--text);">
-        <div>対応表は自動で読み込まれます</div>
-        <div>スキャン開始ボタンを押してください</div>
+    <div class="card info">
+      <div class="card-label">使い方</div>
+      <div style="font-size:13px; font-weight:700; line-height:1.9; color:var(--text)">
+        <div>① 箱のバーコードをスキャン</div>
+        <div>② 未登録なら値札をスキャン</div>
+        <div>③ 自動でSupabaseに保存</div>
+        <div style="font-size:12px;color:var(--text2)">JAN・UPC・EAN全て対応</div>
       </div>
     </div>
 
-    <div class="card" id="csv-status" style="background:#f0fff8; border-color: var(--success);">
-      <div style="font-size:13px; font-weight:700; color: var(--text);" id="csv-status-auto">対応表を読み込み中...</div>
+    <div class="card" id="load-status" style="background:#f0fff8; border-color: var(--success);">
+      <div style="font-size:13px; font-weight:700; color: var(--text);" id="load-status-text">データを確認中...</div>
     </div>
 
-    <button class="btn btn-primary" id="start-btn" disabled onclick="startScan()">スキャン開始（通常モード）</button>
-    <button class="btn btn-secondary" id="start-raw-btn" onclick="startRawScan()" style="margin-top:8px">値札+JANだけ読み込む（rawモード）</button>
+    <button class="btn btn-primary" id="start-btn" onclick="startScan()">スキャン開始</button>
   </div>
 
+  <!-- STEP 2: スキャン画面 -->
   <div class="step" id="step-2">
 
     <div class="phase-indicator">
-      <div class="phase-dot active" id="phase1">1. 値札</div>
-      <div class="phase-dot" id="phase2">2. 箱(JAN)</div>
+      <div class="phase-dot active" id="phase1">1. 箱(GTIN)</div>
+      <div class="phase-dot" id="phase2">2. 値札</div>
+    </div>
+
+    <!-- キャンセルボタン（カメラ起動中） -->
+    <div id="btn-cancel-scan" style="display:none">
+      <button class="btn btn-secondary" onclick="cancelScan()">スキャンをキャンセル</button>
+    </div>
+
+    <!-- 値札スキャン中の戻るボタン -->
+    <div id="btn-back-gtin" style="display:none">
+      <button class="btn btn-secondary" onclick="backToGtin()">箱からやり直す</button>
     </div>
 
     <div id="scanner-container">
@@ -256,45 +216,39 @@
       </div>
     </div>
 
-    <!-- カメラ起動中に表示するキャンセルボタン -->
-    <div id="btn-cancel-scan" style="display:none">
-      <button class="btn btn-secondary" onclick="cancelScan()">スキャンをキャンセル</button>
+    <!-- GTIN結果 -->
+    <div class="card" id="gtin-card" style="display:none">
+      <div class="card-label">箱のバーコード (GTIN)</div>
+      <div class="card-value" id="gtin-value"></div>
+      <div class="card-sub" id="gtin-sub"></div>
     </div>
 
-    <!-- カメラ起動中に箱スキャン時の値札からやり直すボタン -->
-    <div id="btn-back-fudai" style="display:none">
-      <button class="btn btn-secondary" onclick="backToFudai()">値札からやり直す</button>
-    </div>
-
+    <!-- 値札結果 -->
     <div class="card" id="fudai-card" style="display:none">
       <div class="card-label">値札バーコード</div>
       <div class="card-value" id="fudai-value"></div>
       <div class="card-sub" id="fudai-sub"></div>
     </div>
 
-    <div class="card" id="jan-card" style="display:none">
-      <div class="card-label">JANコード（箱）</div>
-      <div class="card-value" id="jan-value"></div>
+    <!-- アクションボタン -->
+    <div id="btn-scan-gtin">
+      <button class="btn btn-primary" onclick="startScanGtin()">箱のバーコードをスキャン</button>
     </div>
-
-    <div id="btn-scan-fudai">
+    <div id="btn-confirm-gtin" style="display:none">
+      <button class="btn btn-success" onclick="confirmGtin()">OK → 値札をスキャンへ</button>
+      <button class="btn btn-secondary" onclick="retryGtin()">やり直す</button>
+    </div>
+    <div id="btn-scan-fudai" style="display:none">
       <button class="btn btn-primary" onclick="startScanFudai()">値札をスキャン</button>
     </div>
     <div id="btn-confirm-fudai" style="display:none">
-      <button class="btn btn-success" id="btn-fudai-ok" onclick="confirmFudai()">OK → 箱をスキャンへ</button>
-      <button class="btn btn-secondary" onclick="retryScanFudai()">やり直す</button>
-    </div>
-    <div id="btn-scan-jan" style="display:none">
-      <button class="btn btn-primary" onclick="startScanJan()">箱のバーコードをスキャン</button>
-    </div>
-    <div id="btn-confirm-jan" style="display:none">
-      <button class="btn btn-success" onclick="confirmJan()">登録する</button>
-      <button class="btn btn-secondary" onclick="retryScanJan()">やり直す</button>
+      <button class="btn btn-success" onclick="confirmFudai()">登録する</button>
+      <button class="btn btn-secondary" onclick="retryFudai()">やり直す</button>
     </div>
 
     <div class="status-bar" style="margin-top:12px">
       <span>登録済み: <span id="scan-count">0</span>件</span>
-      <span>未対応: <span id="error-count">0</span>件</span>
+      <span>スキップ: <span id="skip-count">0</span>件</span>
     </div>
 
     <div class="history-header">
@@ -306,139 +260,54 @@
     </div>
 
     <button class="btn btn-secondary" style="margin-top:12px" onclick="finishWork()">作業をおしまいにする</button>
-
     <div id="finish-actions" style="display:none; margin-top:8px">
-      <button class="btn btn-success" onclick="downloadCSV()">データを保存する</button>
       <button class="btn btn-danger" onclick="resetAll()">最初からやり直す</button>
     </div>
   </div>
 
 </div>
 
-<div class="modal-overlay" id="edit-modal">
-  <div class="modal">
-    <h3>登録データを編集</h3>
-    <input type="hidden" id="edit-index">
-    <div class="modal-label">shoesinfopriceid</div>
-    <input type="text" id="edit-id" inputmode="numeric">
-    <div class="modal-label">JANコード</div>
-    <input type="text" id="edit-jan" inputmode="numeric">
-    <button class="btn btn-primary" onclick="saveEdit()">保存する</button>
-    <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
-let masterData = {};
-let registeredIds = new Set();
-let records = [];
-let errorCount = 0;
-let codeReader = null;
-let currentFudai = null;
-let pendingJan = null;
-let scanTarget = null;
-let rawMode = false; // rawモードフラグ
-
-// Supabase設定（ここを書き換えてください）
+// Supabase設定
 const SUPABASE_URL = 'https://gcvnlgbscrczkodsfwxy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_mJedeQsMGnKICylZKHDpmA_FHd5RByt';
 const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const MASTER_CSV_URL = 'https://gcvnlgbscrczkodsfwxy.supabase.co/storage/v1/object/public/master/shoesinfopriceid_master.csv';
+let registeredGtins = new Set(); // 登録済みGTIN
+let records = []; // 今セッションで登録したもの
+let skipCount = 0;
+let codeReader = null;
+let scanTarget = null; // 'gtin' or 'fudai'
+let pendingGtin = null;
+let pendingFudai = null;
 
-async function loadMasterCSV() {
-  showToast('対応表を読み込み中...', '');
-  try {
-    const res = await fetch(MASTER_CSV_URL);
-    if (!res.ok) throw new Error('fetch failed');
-    const text = await res.text();
-    const lines = text.split('\n').filter(l => l.trim());
-    let count = 0;
-    masterData = {};
-
-    // タブ区切りかカンマ区切りか自動判定
-    const sep = lines[0].includes('\t') ? '\t' : ',';
-
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(sep);
-      if (cols.length < 4) continue;
-      const seqno = cols[0].trim().replace(/^\uFEFF/, '');
-      const edano = cols[1].trim();
-      const sizesid = cols[2].trim();
-      const shoesinfopriceid = cols[3].trim();
-      if (!seqno || !edano || !sizesid || !shoesinfopriceid) continue;
-      masterData[`${seqno}-${edano}-${sizesid.padStart(2,'0')}`] = shoesinfopriceid;
-      count++;
-    }
-    showToast(`対応表 ${count.toLocaleString()}件 読み込み完了`, 'success');
-    document.getElementById('csv-status-auto').textContent = `✅ 対応表 ${count.toLocaleString()}件 読み込み済み`;
-    document.getElementById('start-btn').disabled = count === 0;
-  } catch(e) {
-    showToast('対応表の読み込みに失敗しました', 'error');
-  }
-}
-
-// ページ読み込み時に自動で対応表を取得
-window.addEventListener('DOMContentLoaded', loadMasterCSV);
-
-function startScan() {
-  rawMode = false;
-  document.getElementById('step-1').classList.remove('active');
-  document.getElementById('step-2').classList.add('active');
-  loadFromSupabase();
-}
-
-function startRawScan() {
-  rawMode = true;
-  document.getElementById('step-1').classList.remove('active');
-  document.getElementById('step-2').classList.add('active');
-  showToast('rawモード：値札+JANのみ登録', '');
-}
-
-async function loadFromSupabase() {
-  showToast('既存データを読み込み中...', '');
-  const { data, error } = await dbClient.from('jancode').select('*').order('id', { ascending: false });
+// 起動時に登録済みGTINを読み込む
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data, error } = await dbClient.from('jancode_raw').select('gtin');
   if (error) {
-    showToast('データ読み込みエラー', 'error');
+    document.getElementById('load-status-text').textContent = 'データ読み込みエラー';
     return;
   }
-  if (data && data.length > 0) {
-    records = data.map(r => ({
-      shoesinfopriceid: String(r.shoesinfopriceid),
-      sizesid: r.sizesid,
-      jancode: r.jancode
-    }));
-    registeredIds = new Set(records.map(r => r.shoesinfopriceid));
-    updateCount();
-    updateHistory();
-    showToast(`${records.length}件の既存データを読み込みました`, 'success');
-  } else {
-    showToast('既存データなし。スキャン開始してください', '');
-  }
+  registeredGtins = new Set(data.map(r => r.gtin));
+  document.getElementById('load-status-text').textContent = `登録済み: ${registeredGtins.size}件 読み込み完了`;
 
   // リアルタイム購読
-  dbClient.channel('jancode-realtime')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jancode' }, payload => {
-      const r = payload.new;
-      const newRecord = {
-        shoesinfopriceid: String(r.shoesinfopriceid),
-        sizesid: r.sizesid,
-        jancode: r.jancode
-      };
-      // 重複がなければ追加
-      if (!registeredIds.has(newRecord.shoesinfopriceid)) {
-        records.unshift(newRecord);
-        registeredIds.add(newRecord.shoesinfopriceid);
-        updateCount();
-        updateHistory();
-        showToast('他の端末で登録されました', '');
-      }
+  dbClient.channel('gtin-realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jancode_raw' }, payload => {
+      registeredGtins.add(payload.new.gtin);
+      showToast('他の端末で登録されました', '');
     })
     .subscribe();
+});
+
+function startScan() {
+  document.getElementById('step-1').classList.remove('active');
+  document.getElementById('step-2').classList.add('active');
 }
 
+// ===== スキャナー =====
 function startScanner(target) {
   scanTarget = target;
   document.getElementById('scanner-container').classList.add('active');
@@ -451,11 +320,16 @@ function startScanner(target) {
       if (result) {
         const code = result.getText();
         stopScanner();
-        if (scanTarget === 'fudai') handleFudaiScan(code);
-        else handleJanScan(code);
+        if (scanTarget === 'gtin') handleGtinScan(code);
+        else handleFudaiScan(code);
       }
     }
-  ).catch(() => { showToast('カメラを起動できません', 'error'); stopScanner(); hideAllButtons(); document.getElementById('btn-scan-fudai').style.display = 'block'; });
+  ).catch(() => {
+    showToast('カメラを起動できません', 'error');
+    stopScanner();
+    hideAllButtons();
+    document.getElementById('btn-scan-gtin').style.display = 'block';
+  });
 }
 
 function stopScanner() {
@@ -463,33 +337,92 @@ function stopScanner() {
   document.getElementById('scanner-container').classList.remove('active');
 }
 
-// 値札スキャン開始
-function startScanFudai() {
-  hideAllButtons();
-  document.getElementById('fudai-card').style.display = 'none';
-  document.getElementById('jan-card').style.display = 'none';
-  document.getElementById('btn-cancel-scan').style.display = 'block'; // キャンセルボタン表示
-  setPhase(1);
-  startScanner('fudai');
-}
-
-// 値札スキャン中キャンセル
 function cancelScan() {
   stopScanner();
   hideAllButtons();
+  document.getElementById('btn-cancel-scan').style.display = 'none';
+  document.getElementById('btn-scan-gtin').style.display = 'block';
+  setPhase(1);
+}
+
+// ===== GTINフロー =====
+function startScanGtin() {
+  hideAllButtons();
+  document.getElementById('gtin-card').style.display = 'none';
+  document.getElementById('fudai-card').style.display = 'none';
+  document.getElementById('btn-cancel-scan').style.display = 'block';
+  setPhase(1);
+  startScanner('gtin');
+}
+
+function handleGtinScan(code) {
+  document.getElementById('btn-cancel-scan').style.display = 'none';
+
+  const card = document.getElementById('gtin-card');
+  card.style.display = 'block';
+  document.getElementById('gtin-value').textContent = code;
+
+  // 登録済みチェック
+  if (registeredGtins.has(code)) {
+    card.className = 'card skip';
+    document.getElementById('gtin-sub').textContent = '登録済み → スキップ';
+    showToast('登録済みのためスキップ', '');
+    skipCount++;
+    document.getElementById('skip-count').textContent = skipCount;
+    hideAllButtons();
+    // 1.5秒後に次へ
+    setTimeout(() => {
+      document.getElementById('gtin-card').style.display = 'none';
+      document.getElementById('btn-scan-gtin').style.display = 'block';
+      setPhase(1);
+    }, 1500);
+    return;
+  }
+
+  card.className = 'card success';
+  document.getElementById('gtin-sub').textContent = '未登録 → 値札をスキャンしてください';
+  pendingGtin = code;
+  hideAllButtons();
+  document.getElementById('btn-confirm-gtin').style.display = 'block';
+  showToast('GTINを確認してください', '');
+}
+
+function confirmGtin() {
+  hideAllButtons();
   document.getElementById('btn-scan-fudai').style.display = 'block';
+  document.getElementById('btn-back-gtin').style.display = 'block';
+  setPhase(2);
+}
+
+function retryGtin() {
+  pendingGtin = null;
+  document.getElementById('gtin-card').style.display = 'none';
+  hideAllButtons();
+  document.getElementById('btn-scan-gtin').style.display = 'block';
+  setPhase(1);
+}
+
+function backToGtin() {
+  stopScanner();
+  pendingGtin = null;
+  pendingFudai = null;
+  document.getElementById('gtin-card').style.display = 'none';
+  document.getElementById('fudai-card').style.display = 'none';
+  hideAllButtons();
+  document.getElementById('btn-scan-gtin').style.display = 'block';
+  setPhase(1);
+}
+
+// ===== 値札フロー =====
+function startScanFudai() {
+  document.getElementById('btn-scan-fudai').style.display = 'none';
+  document.getElementById('fudai-card').style.display = 'none';
+  startScanner('fudai');
 }
 
 function handleFudaiScan(code) {
-  document.getElementById('btn-cancel-scan').style.display = 'none';
-
-  if (code.length !== 13) {
-    showToast(`${code.length}桁です（13桁必要）`, 'error');
-    document.getElementById('btn-scan-fudai').style.display = 'block';
-    return;
-  }
-  if (code[0] !== '6') {
-    showToast('値札コードは6から始まる必要があります', 'error');
+  if (code.length !== 13 || code[0] !== '6') {
+    showToast('値札コードが正しくありません', 'error');
     document.getElementById('btn-scan-fudai').style.display = 'block';
     return;
   }
@@ -497,191 +430,61 @@ function handleFudaiScan(code) {
   const seqno = code.substring(1, 7);
   const edano = code.substring(7, 8);
   const sizesid = code.substring(10, 12);
-  const key = `${seqno}-${edano}-${sizesid}`;
-  const shoesinfopriceid = masterData[key];
 
   const card = document.getElementById('fudai-card');
-  card.style.cssText = '';
+  card.className = 'card success';
   card.style.display = 'block';
   document.getElementById('fudai-value').textContent = code;
+  document.getElementById('fudai-sub').textContent = `seqno:${seqno} edano:${edano} size:${sizesid}`;
 
-  // rawモード: 対応データがなくてもそのまま進む
-  if (rawMode) {
-    card.className = 'card success';
-    document.getElementById('fudai-sub').textContent = shoesinfopriceid
-      ? `shoesinfopriceid: ${shoesinfopriceid}`
-      : `seqno:${seqno} edano:${edano} size:${sizesid}（未対応）`;
-    currentFudai = { seqno, edano, sizesid, shoesinfopriceid: shoesinfopriceid || '', code };
-    document.getElementById('btn-fudai-ok').textContent = 'OK → 箱をスキャンへ';
-    document.getElementById('btn-confirm-fudai').style.display = 'block';
-    showToast('値札を確認してください', '');
-    return;
-  }
-
-  if (!shoesinfopriceid) {
-    card.className = 'card error';
-    document.getElementById('fudai-sub').textContent = `対応データなし (${key})`;
-    showToast('対応データが見つかりません', 'error');
-    errorCount++;
-    document.getElementById('error-count').textContent = errorCount;
-    document.getElementById('btn-scan-fudai').style.display = 'block';
-    return;
-  }
-
-  currentFudai = { seqno, edano, sizesid, shoesinfopriceid, code };
-
-  if (registeredIds.has(String(shoesinfopriceid))) {
-    card.className = 'card skip';
-    document.getElementById('fudai-sub').textContent = `登録済みのためスキップ可 (ID: ${shoesinfopriceid})`;
-    document.getElementById('btn-fudai-ok').textContent = 'スキップして次へ';
-    document.getElementById('btn-confirm-fudai').style.display = 'block';
-    showToast('登録済みの商品です', '');
-    return;
-  }
-
-  card.className = 'card success';
-  document.getElementById('fudai-sub').textContent = `shoesinfopriceid: ${shoesinfopriceid}`;
-  document.getElementById('btn-fudai-ok').textContent = 'OK → 箱をスキャンへ';
+  pendingFudai = { seqno, edano, sizesid, code };
+  hideAllButtons();
+  document.getElementById('btn-back-gtin').style.display = 'block';
   document.getElementById('btn-confirm-fudai').style.display = 'block';
   showToast('値札を確認してください', '');
 }
 
-function confirmFudai() {
-  if (registeredIds.has(String(currentFudai.shoesinfopriceid))) {
-    currentFudai = null;
-    document.getElementById('fudai-card').style.display = 'none';
-    hideAllButtons();
-    document.getElementById('btn-scan-fudai').style.display = 'block';
-    setPhase(1);
-    showToast('スキップしました', '');
-    return;
-  }
-  hideAllButtons();
-  document.getElementById('btn-scan-jan').style.display = 'block';
-  document.getElementById('btn-back-fudai').style.display = 'block';
-  setPhase(2);
-}
-
-function retryScanFudai() {
-  currentFudai = null;
-  document.getElementById('fudai-card').style.display = 'none';
-  hideAllButtons();
-  document.getElementById('btn-scan-fudai').style.display = 'block';
-  setPhase(1);
-}
-
-// 箱スキャン開始
-function startScanJan() {
-  document.getElementById('btn-scan-jan').style.display = 'none';
-  document.getElementById('btn-confirm-jan').style.display = 'none';
-  document.getElementById('jan-card').style.display = 'none';
-  // btn-back-fudaiは表示したまま
-  startScanner('jan');
-}
-
-function handleJanScan(code) {
-  const prefix2 = code.substring(0, 2);
-  // rawモード以外は45か49から始まるJANのみ
-  if (!rawMode && prefix2 !== '45' && prefix2 !== '49') {
-    showToast('JANコードは45か49から始まる必要があります', 'error');
-    document.getElementById('btn-scan-jan').style.display = 'block';
-    return;
-  }
-
-  pendingJan = code;
-  const card = document.getElementById('jan-card');
-  card.style.display = 'block';
-
-  const dup = records.find(r => r.shoesinfopriceid === currentFudai.shoesinfopriceid);
-  if (!rawMode && dup) {
-    card.className = 'card error';
-    document.getElementById('jan-value').textContent = code;
-    showToast('既に登録済みです', 'error');
-    document.getElementById('btn-scan-jan').style.display = 'block';
-    return;
-  }
-
-  card.className = 'card success';
-  document.getElementById('jan-value').textContent = code;
-  document.getElementById('btn-scan-jan').style.display = 'none';
-  document.getElementById('btn-confirm-jan').style.display = 'block';
-  showToast('JANコードを確認してください', '');
-}
-
-async function confirmJan() {
-  if (!currentFudai || !pendingJan) return;
-
-  if (rawMode) {
-    // rawモード: jancode_rawテーブルに保存
-    const rawRecord = {
-      seqno: currentFudai.seqno,
-      edano: currentFudai.edano,
-      sizesid: currentFudai.sizesid,
-      jancode: pendingJan
-    };
-    const { error } = await dbClient.from('jancode_raw').insert(rawRecord);
-    if (error) {
-      showToast('保存エラー: ' + error.message, 'error');
-      return;
-    }
-    records.push({ shoesinfopriceid: `${currentFudai.seqno}-${currentFudai.edano}-${currentFudai.sizesid}`, sizesid: currentFudai.sizesid, jancode: pendingJan });
-    updateCount();
-    updateHistory();
-    showToast('rawモードで登録完了！', 'success');
-    currentFudai = null; pendingJan = null;
-    document.getElementById('fudai-card').style.display = 'none';
-    document.getElementById('jan-card').style.display = 'none';
-    hideAllButtons();
-    document.getElementById('btn-scan-fudai').style.display = 'block';
-    setPhase(1);
-    return;
-  }
+async function confirmFudai() {
+  if (!pendingGtin || !pendingFudai) return;
 
   const record = {
-    shoesinfopriceid: parseInt(currentFudai.shoesinfopriceid),
-    sizesid: currentFudai.sizesid,
-    jancode: pendingJan
+    seqno: pendingFudai.seqno,
+    edano: pendingFudai.edano,
+    sizesid: pendingFudai.sizesid,
+    gtin: pendingGtin
   };
 
-  // Supabaseに保存
-  const { error } = await dbClient.from('jancode').insert(record);
+  const { error } = await dbClient.from('jancode_raw').insert(record);
   if (error) {
     showToast('保存エラー: ' + error.message, 'error');
     return;
   }
 
-  records.push({ shoesinfopriceid: currentFudai.shoesinfopriceid, sizesid: currentFudai.sizesid, jancode: pendingJan });
+  registeredGtins.add(pendingGtin);
+  records.push(record);
   updateCount();
   updateHistory();
   showToast('登録完了！', 'success');
-  currentFudai = null;
-  pendingJan = null;
+
+  pendingGtin = null;
+  pendingFudai = null;
+  document.getElementById('gtin-card').style.display = 'none';
   document.getElementById('fudai-card').style.display = 'none';
-  document.getElementById('jan-card').style.display = 'none';
   hideAllButtons();
-  document.getElementById('btn-scan-fudai').style.display = 'block';
+  document.getElementById('btn-scan-gtin').style.display = 'block';
   setPhase(1);
 }
 
-function retryScanJan() {
-  pendingJan = null;
-  document.getElementById('jan-card').style.display = 'none';
-  document.getElementById('btn-confirm-jan').style.display = 'none';
-  document.getElementById('btn-scan-jan').style.display = 'block';
-}
-
-function backToFudai() {
-  stopScanner();
-  currentFudai = null; pendingJan = null;
+function retryFudai() {
+  pendingFudai = null;
   document.getElementById('fudai-card').style.display = 'none';
-  document.getElementById('jan-card').style.display = 'none';
-  hideAllButtons();
+  document.getElementById('btn-confirm-fudai').style.display = 'none';
   document.getElementById('btn-scan-fudai').style.display = 'block';
-  setPhase(1);
 }
 
+// ===== ヘルパー =====
 function hideAllButtons() {
-  ['btn-scan-fudai','btn-confirm-fudai','btn-scan-jan','btn-confirm-jan','btn-back-fudai','btn-cancel-scan'].forEach(id => {
+  ['btn-scan-gtin','btn-confirm-gtin','btn-scan-fudai','btn-confirm-fudai','btn-back-gtin','btn-cancel-scan'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
 }
@@ -700,74 +503,16 @@ function updateHistory() {
   const el = document.getElementById('history-list');
   if (records.length === 0) { el.innerHTML = '<div class="empty-state">まだ登録がありません</div>'; return; }
   let html = '';
-  [...records].reverse().forEach((r, i) => {
-    const idx = records.length - 1 - i;
+  [...records].reverse().forEach(r => {
     html += `<div class="record-item">
       <div class="record-info">
-        <div class="record-id">ID: ${r.shoesinfopriceid}</div>
-        <div class="record-jan">JAN: ${r.jancode}</div>
+        <div class="record-gtin">GTIN: ${r.gtin}</div>
+        <div class="record-seq">seq:${r.seqno} edano:${r.edano}</div>
       </div>
       <span class="record-size">${r.sizesid}</span>
-      <div class="record-actions">
-        <button class="btn btn-secondary btn-sm" onclick="openEdit(${idx})">編集</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteRecord(${idx})">削除</button>
-      </div>
     </div>`;
   });
   el.innerHTML = html;
-}
-
-function openEdit(idx) {
-  const r = records[idx];
-  document.getElementById('edit-index').value = idx;
-  document.getElementById('edit-id').value = r.shoesinfopriceid;
-  document.getElementById('edit-jan').value = r.jancode;
-  document.getElementById('edit-modal').classList.add('show');
-}
-
-function saveEdit() {
-  const idx = parseInt(document.getElementById('edit-index').value);
-  records[idx].shoesinfopriceid = document.getElementById('edit-id').value.trim();
-  records[idx].jancode = document.getElementById('edit-jan').value.trim();
-  closeModal();
-  updateHistory();
-  showToast('編集しました', 'success');
-}
-
-function deleteRecord(idx) {
-  if (!confirm('削除しますか？')) return;
-  records.splice(idx, 1);
-  updateCount();
-  updateHistory();
-  showToast('削除しました', '');
-}
-
-function closeModal() { document.getElementById('edit-modal').classList.remove('show'); }
-
-function downloadCSV() {
-  if (records.length === 0) { showToast('データがありません', 'error'); return; }
-  let csv = 'shoesinfopriceid\tsizesid\tjancode\n';
-  records.forEach(r => { csv += `${r.shoesinfopriceid}\t${r.sizesid}\t${r.jancode}\n`; });
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/tab-separated-values' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  const firstId = records[0].shoesinfopriceid;
-  a.download = `jancode_${new Date().toISOString().slice(0,10)}_${firstId}.tsv`;
-  a.click();
-  showToast('ダウンロード完了', 'success');
-}
-
-function resetAll() {
-  if (records.length > 0 && !confirm(`${records.length}件のデータが消えます。よろしいですか？`)) return;
-  stopScanner();
-  records = []; errorCount = 0; currentFudai = null; pendingJan = null; masterData = {};
-  updateCount(); updateHistory();
-  document.getElementById('csv-status').style.display = 'none';
-  document.getElementById('registered-status').style.display = 'none';
-  document.getElementById('start-btn').disabled = true;
-  document.getElementById('finish-actions').style.display = 'none';
-  document.getElementById('step-2').classList.remove('active');
-  document.getElementById('step-1').classList.add('active');
 }
 
 function finishWork() {
@@ -776,18 +521,20 @@ function finishWork() {
   showToast('お疲れさまでした！', 'success');
 }
 
-// Service Worker登録（PWA・キャッシュ自動更新）
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(reg => {
-    reg.addEventListener('updatefound', () => {
-      const newWorker = reg.installing;
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          window.location.reload();
-        }
-      });
-    });
-  });
+function resetAll() {
+  if (records.length > 0 && !confirm(`${records.length}件のデータがあります。最初からやり直しますか？`)) return;
+  stopScanner();
+  records = []; skipCount = 0;
+  pendingGtin = null; pendingFudai = null;
+  updateCount();
+  updateHistory();
+  document.getElementById('skip-count').textContent = '0';
+  document.getElementById('finish-actions').style.display = 'none';
+  document.getElementById('gtin-card').style.display = 'none';
+  document.getElementById('fudai-card').style.display = 'none';
+  hideAllButtons();
+  document.getElementById('btn-scan-gtin').style.display = 'block';
+  setPhase(1);
 }
 
 function showToast(msg, type = '') {
@@ -796,6 +543,18 @@ function showToast(msg, type = '') {
   t.className = `show ${type}`;
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.className = '', 2500);
+}
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w.addEventListener('statechange', () => {
+        if (w.state === 'installed' && navigator.serviceWorker.controller) window.location.reload();
+      });
+    });
+  });
 }
 </script>
 </body>
