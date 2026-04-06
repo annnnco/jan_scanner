@@ -166,7 +166,10 @@
 
 <header>
   <h1>GTINコード登録</h1>
-  <span id="count-badge">0件</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:10px;color:rgba(255,255,255,0.7);font-weight:700;">v1.2</span>
+    <span id="count-badge">0件</span>
+  </div>
 </header>
 
 <div class="container">
@@ -319,6 +322,7 @@ function startScanner(target) {
     (result, err) => {
       if (result) {
         const code = result.getText();
+        soundOK(); // スキャン成功音
         stopScanner();
         if (scanTarget === 'gtin') handleGtinScan(code);
         else handleFudaiScan(code);
@@ -466,7 +470,6 @@ async function confirmFudai() {
   records.push(record);
   updateCount();
   updateHistory();
-  soundOK();
   showToast('登録完了！', 'success');
 
   pendingGtin = null;
