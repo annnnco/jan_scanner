@@ -366,6 +366,7 @@ function handleGtinScan(code) {
   if (registeredGtins.has(code)) {
     card.className = 'card skip';
     document.getElementById('gtin-sub').textContent = '登録済み → スキップ';
+    soundError();
     showToast('登録済みのためスキップ', '');
     skipCount++;
     document.getElementById('skip-count').textContent = skipCount;
@@ -422,6 +423,7 @@ function startScanFudai() {
 
 function handleFudaiScan(code) {
   if (code.length !== 13 || code[0] !== '6') {
+    soundError();
     showToast('値札コードが正しくありません', 'error');
     document.getElementById('btn-scan-fudai').style.display = 'block';
     return;
@@ -464,6 +466,7 @@ async function confirmFudai() {
   records.push(record);
   updateCount();
   updateHistory();
+  soundOK();
   showToast('登録完了！', 'success');
 
   pendingGtin = null;
@@ -543,6 +546,34 @@ function showToast(msg, type = '') {
   t.className = `show ${type}`;
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.className = '', 2500);
+}
+
+// 音とバイブ
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function beep(freq, duration, type = 'sine') {
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = freq;
+    osc.type = type;
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + duration);
+  } catch(e) {}
+}
+
+function soundOK() {
+  beep(1000, 0.1); // 高めの短い「ピッ」
+  if (navigator.vibrate) navigator.vibrate(50);
+}
+
+function soundError() {
+  beep(200, 0.3, 'sawtooth'); // 低めの「ブッ」
+  if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 }
 
 // Service Worker
